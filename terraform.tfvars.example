@@ -1,0 +1,22 @@
+# =============================================================================
+# TERRAFORM VARIABLES EXAMPLE FILE
+# =============================================================================
+# Copy this file to 'terraform.tfvars' and fill in your actual values.
+# NEVER commit terraform.tfvars to version control!
+
+# AWS Regions
+primary_region = "us-east-1"
+dr_region      = "us-east-2"
+
+# Project Configuration
+project_name  = "my-app"
+instance_type = "t2.micro"
+app_port      = 7000
+
+# SENSITIVE VALUES - Replace with your actual values
+# SSH Key name (must exist in your AWS account)
+ssh_key_name = "your-ssh-key-name"
+
+# Secret header value for CloudFront-ALB communication
+# Use a strong, random value (e.g., generated with: openssl rand -base64 32)
+cloudfront_secret_header_value = "your-strong-random-secret-here"
