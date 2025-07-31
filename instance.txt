@@ -1,0 +1,89 @@
+# =============================================================================
+# ISTANZA EC2 (VIRTUAL SERVER)
+# =============================================================================
+# Questa risorsa definisce il server virtuale principale dove verrà eseguita 
+# l'applicazione. Viene configurato con un sistema operativo, tipo di istanza,
+# permessi, rete e uno script di avvio per preparare l'ambiente.
+
+resource "aws_instance" "server-instance" {
+  # --- Configurazione di Base dell'Istanza ---
+  # Seleziona l'Amazon Machine Image (AMI) e il tipo di istanza.
+  # L'AMI viene recuperata dinamicamente per usare sempre l'ultima versione 
+  # di Amazon Linux disponibile nella regione selezionata.
+  ami           = data.aws_ami.latest_amazon_linux.id
+  instance_type = "t2.micro" # Tipo di istanza (inclusa nel piano gratuito di AWS)
+
+  # --- Profilo IAM e Permessi ---
+  # Associa il profilo IAM creato in 'iam.tf'. Questo conferisce all'istanza
+  # i permessi necessari per interagire con altri servizi AWS, come ECR.
+  iam_instance_profile = aws_iam_instance_profile.ec2_instance_profile.name
+
+  # --- Configurazione di Rete ---
+  # Assegna l'istanza alla prima subnet pubblica disponibile per la regione
+  # configurata, garantendo che sia accessibile da Internet.
+  subnet_id = aws_subnet.public[keys(var.subnet_config[var.aws_region])[0]].id
+
+  # --- Configurazione di Sicurezza ---
+  # Associa il Security Group definito in 'security_groups.tf', che agisce
+  # come un firewall virtuale per controllare il traffico in entrata e in uscita.
+  vpc_security_group_ids = [
+    aws_security_group.web_sg.id
+  ]
+
+  # Associa una coppia di chiavi SSH per l'accesso sicuro.
+  # Assicurati che questa chiave esista nella console EC2 della regione scelta.
+  key_name = var.ssh_key_name
+
+  # --- Script di Avvio (User Data) ---
+  # Questo script viene eseguito automaticamente al primo avvio dell'istanza.
+  # Prepara l'ambiente installando Docker e configurando i permessi necessari.
+  user_data = <<-EOF
+    #!/bin/bash
+    # Script per l'installazione di Docker su Amazon Linux 2023
+
+    echo "--- Inizio aggiornamento dei pacchetti di sistema ---"
+    sudo dnf update -y
+    echo "--- Aggiornamento dei pacchetti completato ---"
+
+    echo "--- Inizio installazione di Docker ---"
+    sudo dnf install docker -y
+    echo "--- Installazione di Docker completata ---"
+
+    echo "--- Avvio e abilitazione del servizio Docker ---"
+    sudo systemctl start docker
+    sudo systemctl enable docker
+    echo "--- Servizio Docker attivo e abilitato ---"
+
+    echo "--- Aggiunta dell'utente 'ec2-user' al gruppo 'docker' ---"
+    sudo usermod -aG docker ec2-user
+    echo "--- Permessi Docker configurati ---"
+
+    echo "--- Script di User Data completato ---"
+    EOF
+
+  # --- Tag di Metadati per la Risorsa ---
+  # I tag sono etichette chiave-valore utili per organizzare e identificare le risorse.
+  tags = {
+    Name = "${var.aws_region}-my-web-server"
+  }
+}
+
+# =============================================================================
+# (Opzionale) IP ELASTICO (EIP)
+# =============================================================================
+# Decommenta questo blocco se hai bisogno di un indirizzo IP pubblico statico
+# che persista anche se l'istanza viene fermata e riavviata.
+/*
+resource "aws_eip" "server_instance_eip" {
+  vpc      = true
+  instance = aws_instance.server-instance.id
+
+  # Dipendenza esplicita per assicurarsi che l'Internet Gateway esista
+  # prima di tentare di associare l'IP.
+  depends_on = [aws_internet_gateway.main_igw]
+
+  tags = {
+    Name = "${var.aws_region}-${aws_instance.server-instance.tags.Name}-eip"
+  }
+}
+*/

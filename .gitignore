@@ -1,0 +1,53 @@
+# =============================================================================
+# TERRAFORM GITIGNORE
+# =============================================================================
+
+# Terraform state files - contain sensitive information
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Terraform variable files with actual values
+terraform.tfvars
+*.auto.tfvars
+*.auto.tfvars.json
+
+# Terraform plan files
+*.tfplan
+
+# Terraform crash log files
+crash.log
+crash.*.log
+
+# Terraform override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform CLI configuration files
+.terraformrc
+terraform.rc
+
+# Terraform lock files (optional - some teams prefer to commit these)
+# .terraform.lock.hcl
+
+# Terraform directories
+.terraform/
+.terraform.tfstate.lock.info
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
